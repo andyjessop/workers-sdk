@@ -40,6 +40,6 @@ export async function query({ req, env, json }: Context) {
 			200
 		);
 	} catch (e) {
-		return new Response("Could not create completion", { status: 500 });
+		return new Response(`Could not create completion: ${e}`, { status: 500 });
 	}
 }

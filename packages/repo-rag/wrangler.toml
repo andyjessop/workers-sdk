@@ -12,3 +12,7 @@ binding = "WORKERS_SDK_RAG_AI"
 [[kv_namespaces]]
 binding = "WORKERS_SDK_RAG_KV"
 id = "03690cb14727424d8e5605c6b3f159b7"
+
+[[durable_objects.bindings]]
+name = "WORKERS_SDK_RAG_MUTEX"
+class_name = "RagMutex"

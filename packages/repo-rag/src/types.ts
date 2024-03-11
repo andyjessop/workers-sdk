@@ -10,10 +10,18 @@ export type Env = {
 	WORKERS_SDK_RAG_KV: KVNamespace;
 	WORKERS_SDK_RAG_API_KEY: string;
 	WORKERS_SDK_RAG_INDEX: VectorizeIndex;
+	WORKERS_SDK_RAG_MUTEX: DurableObjectNamespace;
 };
 
-export type App = Hono<{ Bindings: Env }>;
+export type Variables = {
+	mutexId: string;
+};
 
-export type MiddlewareHandler = HonoMiddlewareHandler<{ Bindings: Env }>;
-export type Context = HonoContext<{ Bindings: Env }>;
+export type App = Hono<{ Bindings: Env; Variables: Variables }>;
+
+export type MiddlewareHandler = HonoMiddlewareHandler<{
+	Bindings: Env;
+	Variables: Variables;
+}>;
+export type Context = HonoContext<{ Bindings: Env; Variables: Variables }>;
 export type Next = () => Promise<void>;

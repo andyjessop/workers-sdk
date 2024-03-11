@@ -4,7 +4,7 @@ import { deleteIndicesByFilename } from "../../vectorize/delete-indices-by-filen
 import { splitFileIntoDocuments } from "./split-file-into-documents";
 import type { Context } from "../../types";
 
-export async function vectorizeFile({ req, env, json }: Context) {
+export async function vectorizeFiles({ req, env, json }: Context) {
 	const body = (await req.json()) as {
 		content: string;
 		filename: string;
