@@ -1,0 +1,10 @@
+name = "workers-sdk-rag"
+compatibility_date = "2022-05-03"
+main = "src/index.ts"
+
+[[vectorize]]
+binding = "WORKERS_SDK_RAG_INDEX"
+index_name = "workers-sdk-rag"
+
+[ai]
+binding = "WORKERS_SDK_RAG_AI"
