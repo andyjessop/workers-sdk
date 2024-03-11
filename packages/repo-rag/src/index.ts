@@ -21,6 +21,6 @@ app.post("/vectors/delete_by_filename", deleteByFilename);
 
 // Query the AI. This will vectorize the query and then retrieve relevant
 // snippets from the index, and use those as context for the query.
-app.post("/query", query);
+app.post("/vectors/query", query);
 
 export default app;
