@@ -30,7 +30,7 @@ export async function query({ req, env, json }: Context) {
 	const prompt = createPrompt(context, q);
 
 	try {
-		const response = generateText(prompt);
+		const response = await generateText(prompt);
 
 		return json(
 			{
