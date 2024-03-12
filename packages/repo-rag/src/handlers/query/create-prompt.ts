@@ -6,7 +6,7 @@ export function createPrompt(context: string, userQuery: string) {
   based on your training, but you must state that there was no context provided.
   ----------------
   CONTEXT
-  ${context}
+  ${context.slice(0, 3000)}
   ----------------
   QUERY:
   ${userQuery}`;

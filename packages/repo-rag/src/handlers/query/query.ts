@@ -5,7 +5,7 @@ import type { Context } from "../../types";
 import type { StatusCode } from "hono/utils/http-status";
 
 export async function query(ctx: Context) {
-	const body = (await ctx.req.json()) as { model: string; query: string };
+	const body = (await ctx.req.json()) as { query: string };
 
 	if (!body?.query) {
 		return new Response("Missing query", { status: 400 });
@@ -31,7 +31,7 @@ export async function query(ctx: Context) {
 		return ctx.json(
 			{
 				prompt,
-				response,
+				response: response.response,
 			},
 			200
 		);

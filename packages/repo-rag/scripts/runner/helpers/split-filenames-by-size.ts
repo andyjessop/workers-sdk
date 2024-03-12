@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 
-const MAX_ARRAY_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_ARRAY_SIZE = 1024 * 1024; // 1MB
 
 interface FileInfo {
 	filename: string;

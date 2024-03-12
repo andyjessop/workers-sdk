@@ -1,24 +1,23 @@
+import path from "path";
 import { config } from "dotenv";
 import { findRepoRoot } from "./helpers/find-repo-root";
 import { getChangedFilesBetweenHashes } from "./helpers/get-changed-files-between-hashes";
 import { getCurrentHash } from "./helpers/get-current-hash";
 import { fetchFileContent } from "./helpers/get-file-content";
 import { splitFilenamesBySize } from "./helpers/split-filenames-by-size";
+import { vectorizeFiles } from "./helpers/vectorize-files";
 
 config();
 
 const CURRENT_HASH_URL =
 	"https://workers-sdk-rag.andrewdjessop.workers.dev/current_hash";
 
-const CREATE_VECTORS_URL =
-	"https://workers-sdk-rag.andrewdjessop.workers.dev/vectors";
+const CREATE_VECTORS_URL = "http://localhost:8787/vectors";
 
 const DELETE_BY_FILENAME_URL =
 	"https://workers-sdk-rag.andrewdjessop.workers.dev/vectors/delete_by_filename";
 
 const isDryRun = process.argv.includes("--dry-run");
-
-const excludedfiles = ["pnpm-lock.yaml"];
 
 main();
 
@@ -48,8 +47,6 @@ async function main() {
 			currentHash
 		);
 
-		console.log(addedOrModified);
-
 		await fetch(DELETE_BY_FILENAME_URL, {
 			method: "POST",
 			headers: {
@@ -74,7 +71,7 @@ async function main() {
 					}
 
 					return {
-						filename,
+						filename: path.relative(repoPath, path.resolve(repoPath, filename)),
 						content,
 					};
 				})
@@ -92,8 +89,6 @@ async function main() {
 			// 	withoutNullEntries,
 			// 	vectorizeUrl
 			// );
-
-			console.log(vectorizeUrl, withoutNullEntries.length);
 		}
 	} catch (error) {
 		console.error("Error:", error);

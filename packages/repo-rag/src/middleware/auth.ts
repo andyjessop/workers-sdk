@@ -8,7 +8,7 @@ export async function auth(ctx: Context, next: Next) {
 	const { req, env } = ctx;
 
 	if (req.header("WORKERS_SDK_RAG_API_KEY") !== env.WORKERS_SDK_RAG_API_KEY) {
-		return new Response("Unauthorized", { status: 401 });
+		return ctx.json({ message: "Unauthorized" }, { status: 401 });
 	}
 	await next();
 }

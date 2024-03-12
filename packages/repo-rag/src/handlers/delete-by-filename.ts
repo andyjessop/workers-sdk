@@ -10,25 +10,25 @@ export async function deleteByFilename(ctx: Context) {
 
 	const { filenames } = body;
 
-	const deletedFiles = [];
-	const failedFiles = [];
+	const results = [];
 
 	for (const filename of filenames) {
-		const { success } = await ctx.get("VectorDb").deleteByFilename(filename);
+		const { code, data, message, success } = await ctx
+			.get("VectorDb")
+			.deleteByFilename(filename);
 
-		if (success) {
-			deletedFiles.push(filename);
-		} else {
-			failedFiles.push(filename);
-		}
+		results.push({
+			filename,
+			code,
+			data,
+			message,
+			success,
+		});
 	}
 
 	return ctx.json(
 		{
-			data: {
-				deletedFiles,
-				failedFiles,
-			},
+			data: results,
 			message: isDryRun
 				? "[Dry run: no data modified] Delete successful."
 				: "Delete successful.",

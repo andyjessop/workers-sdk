@@ -1,33 +1,53 @@
 import type { Context } from "../../types";
-import type { StatusCode } from "hono/utils/http-status";
+
+interface FileData {
+	filename: string;
+	content: string;
+}
 
 export async function vectorizeFiles(ctx: Context) {
-	const body = (await ctx.req.json()) as {
-		content: string;
-		filename: string;
-	};
+	const body = (await ctx.req.json()) as FileData[];
 
-	if (!body?.content || !body?.filename) {
-		return ctx.json("Missing content or filename", { status: 400 });
+	if (!Array.isArray(body) || body.length === 0) {
+		return ctx.json("Missing file data", { status: 400 });
 	}
 
-	const { content, filename } = body;
 	const vectorDb = ctx.get("VectorDb");
+	const isDryRun = ctx.get("isDryRun");
+	const results = [];
 
-	const { code, data, message, success } = await vectorDb.upsert(
-		content,
-		filename
-	);
+	for (const { filename, content } of body) {
+		if (!filename || !content) {
+			results.push({
+				filename,
+				code: 400,
+				success: false,
+				message: "Missing content or filename",
+			});
+			continue;
+		}
 
-	if (!success) {
-		return ctx.json(message, code as StatusCode);
+		const { code, data, message, success } = await vectorDb.upsert(
+			content,
+			filename
+		);
+
+		results.push({
+			filename,
+			code,
+			data,
+			message,
+			success,
+		});
 	}
 
 	return ctx.json(
 		{
-			data,
-			message,
+			data: results,
+			message: isDryRun
+				? "[Dry run: no data modified] Upsert successful."
+				: "Upsert successful.",
 		},
-		code as StatusCode
+		200
 	);
 }

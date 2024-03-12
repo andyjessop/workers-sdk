@@ -17,6 +17,9 @@ export class ConsistentKVDO {
 
 		switch (request.method) {
 			case "GET":
+				if (key === "list") {
+					return this.handleList();
+				}
 				return this.handleGet(key);
 			case "PUT":
 				return this.handlePut(key, await request.text());
@@ -33,6 +36,14 @@ export class ConsistentKVDO {
 			return new Response("Not found", { status: 404 });
 		}
 		return new Response(value.toString());
+	}
+
+	async handleList() {
+		const values = await this.storage.list();
+		if (!values) {
+			return new Response("Not found", { status: 404 });
+		}
+		return new Response(JSON.stringify(values));
 	}
 
 	async handlePut(key: string, value: string) {

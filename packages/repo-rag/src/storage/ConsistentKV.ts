@@ -48,6 +48,28 @@ export class ConsistentKV {
 		};
 	}
 
+	async list(): Promise<KVResponse> {
+		const request = new Request(`https://kv/list`);
+		const response = await this.#durableObject.fetch(request);
+
+		if (!response.ok) {
+			return {
+				code: 500,
+				success: false,
+				message: `Failed to get list: ${response.statusText}`,
+			};
+		}
+
+		const values = await response.text();
+
+		return {
+			code: 200,
+			success: true,
+			message: "Get operation successful.",
+			data: values as any,
+		};
+	}
+
 	async put(key: string, value: string): Promise<KVResponse> {
 		if (this.#isDryRun) {
 			const existingValue = await this.get(key);

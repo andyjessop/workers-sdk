@@ -76,17 +76,21 @@ export class VectorDb {
 			await this.deleteByFilename(filename);
 
 			for (const embedding of embeddings) {
-				await this.#vectorDb.insert([
-					{
-						id: embedding.id,
-						values: embedding.vector,
-						metadata: {
-							filename,
-							timestamp,
-							content: embedding.content,
+				try {
+					await this.#vectorDb.insert([
+						{
+							id: embedding.id,
+							values: embedding.vector,
+							metadata: {
+								filename,
+								timestamp,
+								content: embedding.content,
+							},
 						},
-					},
-				]);
+					]);
+				} catch (e) {
+					console.log("Failed: ", embedding);
+				}
 			}
 
 			const embeddingsArray = [...embeddings];
@@ -128,6 +132,33 @@ export class VectorDb {
 		};
 	}
 
+	async getById(id: string): Promise<VectorDbResponse> {
+		try {
+			const vectors = await this.#vectorDb.getByIds([id]);
+
+			if (!vectors) {
+				return {
+					code: 404,
+					success: false,
+					message: `Vector with ID ${id} not found`,
+				};
+			}
+
+			return {
+				code: 200,
+				success: true,
+				message: "Vector retrieved successfully",
+				data: vectors.map((vector) => JSON.stringify(vector)),
+			};
+		} catch (e) {
+			return {
+				code: 500,
+				success: false,
+				message: `Error retrieving vector with ID ${id}: ${e}`,
+			};
+		}
+	}
+
 	async #generateEmbedding(content: string): Promise<number[]> {
 		if (this.#isDryRun) {
 			return [1, 2, 3, 4, 5];
@@ -145,14 +176,14 @@ export class VectorDb {
 			const vector = await this.#generateEmbedding(query);
 
 			const similar = await this.#vectorDb.query(vector, {
-				topK: 10,
+				topK: 20,
 				returnMetadata: true,
 			});
 
 			const formattedMatches = similar.matches
 				.map((match) => ({
 					score: match.score,
-					content: match.metadata?.content as string,
+					content: (match as any).vector.metadata?.content as string,
 				}))
 				.filter((entry) => entry.content !== undefined);
 

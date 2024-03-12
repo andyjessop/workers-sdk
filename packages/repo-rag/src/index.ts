@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { currentHash } from "./handlers/current-hash";
 import { deleteByFilename } from "./handlers/delete-by-filename";
+import { listVectors } from "./handlers/list-vectors";
 import { query } from "./handlers/query/query";
 import { vectorizeFiles } from "./handlers/vectorize-files/vectorize-files";
 import { ai } from "./middleware/ai";
@@ -22,6 +23,8 @@ app.use(dryRun);
 app.use(ai);
 app.use(consistentKv);
 app.use(vectorDb);
+
+app.get("/vectors", listVectors);
 
 // Takes a file and turns it into vectors, saving the vectors in the index
 // This will split the file up into multiple chunks if deemed too big
