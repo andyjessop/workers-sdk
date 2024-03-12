@@ -93,7 +93,7 @@ async function main() {
 			// 	vectorizeUrl
 			// );
 
-			console.log(vectorizeUrl, withoutNullEntries);
+			console.log(vectorizeUrl, withoutNullEntries.length);
 		}
 	} catch (error) {
 		console.error("Error:", error);
