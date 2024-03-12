@@ -6,12 +6,35 @@ export function getChangedFilesBetweenHashes(
 	hash1: string | null,
 	hash2: string | null
 ) {
-	const validHash1 = hash1 || "HEAD";
-	const validHash2 = hash2 || "HEAD";
+	if (hash1 === null) {
+		// If the first hash is null, retrieve all the source files in the repository
+		const excludedPaths = [
+			"node_modules",
+			"**/node_modules/**/*",
+			"pnpm-lock.yaml",
+			".vscode",
+			"vendor",
+		];
 
-	const gitCommand = `git diff --name-only ${validHash1} ${validHash2}`;
+		const gitCommand = `git ls-files -- . ':!${excludedPaths.join("' ':!")}'`;
 
-	try {
+		try {
+			const output = execSync(gitCommand, { cwd: repoPath }).toString().trim();
+
+			const sourceFiles = output
+				.split("\n")
+				.map((file) => path.resolve(repoPath, file));
+
+			return sourceFiles;
+		} catch (error: unknown) {
+			throw error;
+		}
+	} else {
+		const validHash1 = hash1 || "HEAD";
+		const validHash2 = hash2 || "HEAD";
+
+		const gitCommand = `git diff --name-only ${validHash1} ${validHash2}`;
+
 		const output = execSync(gitCommand, { cwd: repoPath }).toString().trim();
 
 		const changedFiles = output
@@ -19,26 +42,5 @@ export function getChangedFilesBetweenHashes(
 			.map((file) => path.resolve(repoPath, file));
 
 		return changedFiles;
-	} catch (error: unknown) {
-		if (
-			(error as { stderr: Error }).stderr
-				.toString()
-				.includes("unknown revision or path not in the working tree")
-		) {
-			// One or both hashes are not valid, try reversing the order
-			const reversedGitCommand = `git diff --name-only ${validHash2} ${validHash1}`;
-
-			const output = execSync(reversedGitCommand, { cwd: repoPath })
-				.toString()
-				.trim();
-
-			const changedFiles = output
-				.split("\n")
-				.map((file) => path.resolve(repoPath, file));
-
-			return changedFiles;
-		} else {
-			throw error;
-		}
 	}
 }
