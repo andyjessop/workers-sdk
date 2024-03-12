@@ -9,13 +9,10 @@ import { vectorizeFiles } from "./helpers/vectorize-files";
 
 config();
 
-const CURRENT_HASH_URL =
-	"https://workers-sdk-rag.andrewdjessop.workers.dev/current_hash";
-
+const CURRENT_HASH_URL = "http://localhost:8787/current_hash";
 const CREATE_VECTORS_URL = "http://localhost:8787/vectors";
-
 const DELETE_BY_FILENAME_URL =
-	"https://workers-sdk-rag.andrewdjessop.workers.dev/vectors/delete_by_filename";
+	"http://localhost:8787/vectors/delete_by_filename";
 
 const isDryRun = process.argv.includes("--dry-run");
 
@@ -85,10 +82,7 @@ async function main() {
 				? `${CREATE_VECTORS_URL}?dry-run`
 				: CREATE_VECTORS_URL;
 
-			// const vectorizeResponse = await vectorizeFiles(
-			// 	withoutNullEntries,
-			// 	vectorizeUrl
-			// );
+			await vectorizeFiles(withoutNullEntries, vectorizeUrl);
 		}
 	} catch (error) {
 		console.error("Error:", error);
