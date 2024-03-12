@@ -1,19 +1,27 @@
 import { Hono } from "hono";
+import { currentHash } from "./handlers/current-hash";
 import { deleteByFilename } from "./handlers/delete-by-filename";
 import { query } from "./handlers/query/query";
 import { vectorizeFiles } from "./handlers/vectorize-files/vectorize-files";
+import { ai } from "./middleware/ai";
 import { auth } from "./middleware/auth";
-import { mutex } from "./middleware/mutex";
+import { consistentKv } from "./middleware/consistent-kv";
+import { dryRun } from "./middleware/dry-run";
+import { vectorDb } from "./middleware/vector-db";
 import type { Env, Variables } from "./types";
+
+export { ConsistentKVDO } from "./storage/ConsistentKVDO";
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // Checks for WORKERS_SDK_RAG_API_KEY
 app.use(auth);
 
-// Ensures that app is locked while updating, which can happen
-// over several requests if request sizes are large.
-app.use(mutex);
+// Add some values and services to the ctx object
+app.use(dryRun);
+app.use(ai);
+app.use(consistentKv);
+app.use(vectorDb);
 
 // Takes a file and turns it into vectors, saving the vectors in the index
 // This will split the file up into multiple chunks if deemed too big
@@ -27,5 +35,9 @@ app.post("/vectors/delete_by_filename", deleteByFilename);
 // Query the AI. This will vectorize the query and then retrieve relevant
 // snippets from the index, and use those as context for the query.
 app.post("/vectors/query", query);
+
+// The current hash is the commit hash of the last files to be saved to
+// the vector DB.
+app.get("/current_hash", currentHash);
 
 export default app;

@@ -1,15 +1,26 @@
-import { findNearestGitFolder } from "./helpers/find-nearest-git-folder";
+import { config } from "dotenv";
+import { findRepoRoot } from "./helpers/find-repo-root";
 import { getChangedFilesBetweenHashes } from "./helpers/get-changed-files-between-hashes";
 import { getCurrentHash } from "./helpers/get-current-hash";
 import { fetchFileContent } from "./helpers/get-file-content";
 import { splitFilenamesBySize } from "./helpers/split-filenames-by-size";
-import { vectorizeFiles } from "./helpers/vectorize-files";
 
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
+config();
+
+const CURRENT_HASH_URL =
+	"https://workers-sdk-rag.andrewdjessop.workers.dev/current_hash";
+
+const CREATE_VECTORS_URL =
+	"https://workers-sdk-rag.andrewdjessop.workers.dev/vectors";
+
+const isDryRun = process.argv.includes("--dry-run");
+
+const excludedfiles = ["pnpm-lock.yaml"];
+
 main();
 
 async function main() {
-	const repoPath = findNearestGitFolder();
+	const repoPath = findRepoRoot();
 
 	if (!repoPath) {
 		throw new Error("Cannot find git repo");
@@ -18,14 +29,24 @@ async function main() {
 	const currentHash = getCurrentHash(repoPath);
 
 	try {
-		const response = await fetch("/latest_hash"); // Replace with the actual endpoint URL
-		const lastHash = await response.text();
+		const currentHashResponse = await fetch(CURRENT_HASH_URL, {
+			headers: {
+				WORKERS_SDK_RAG_API_KEY: process.env.WORKERS_SDK_RAG_API_KEY as string,
+			},
+		});
+
+		const lastHash = (await currentHashResponse.json()) as {
+			data: string | null;
+		};
 
 		const changedFiles = getChangedFilesBetweenHashes(
 			repoPath,
-			lastHash,
+			lastHash.data,
 			currentHash
-		);
+		).filter((filename) => !excludedfiles.includes(filename));
+
+		console.log(changedFiles);
+
 		const splitArrays = await splitFilenamesBySize(changedFiles);
 
 		for (const array of splitArrays) {
@@ -48,7 +69,16 @@ async function main() {
 				(entry) => entry !== null
 			) as { content: string; filename: string }[];
 
-			await vectorizeFiles(withoutNullEntries);
+			const vectorizeUrl = isDryRun
+				? `${CREATE_VECTORS_URL}?dry-run`
+				: CREATE_VECTORS_URL;
+
+			// const vectorizeResponse = await vectorizeFiles(
+			// 	withoutNullEntries,
+			// 	vectorizeUrl
+			// );
+
+			console.log(vectorizeUrl, withoutNullEntries);
 		}
 	} catch (error) {
 		console.error("Error:", error);

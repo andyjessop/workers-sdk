@@ -1,8 +1,7 @@
 export async function vectorizeFiles(
-	arr: { filename: string; content: string }[]
+	arr: { filename: string; content: string }[],
+	url: string
 ) {
-	const url = "/url"; // Replace with the actual endpoint URL
-
 	try {
 		const response = await fetch(url, {
 			method: "POST",
@@ -12,11 +11,9 @@ export async function vectorizeFiles(
 			body: JSON.stringify(arr),
 		});
 
-		if (response.ok) {
-			console.log("Array sent successfully");
-		} else {
-			console.error("Error sending array:", response.status);
-		}
+		const text = await response.json();
+
+		console.log(text);
 	} catch (error) {
 		console.error("Error sending array:", error);
 	}

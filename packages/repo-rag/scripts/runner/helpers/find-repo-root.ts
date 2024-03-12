@@ -1,9 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-export function findNearestGitFolder(
-	currentDir = process.cwd()
-): string | null {
+export function findRepoRoot(currentDir = process.cwd()): string | null {
 	const gitFolder = path.join(currentDir, ".git");
 
 	if (fs.existsSync(gitFolder) && fs.statSync(gitFolder).isDirectory()) {
@@ -16,5 +14,5 @@ export function findNearestGitFolder(
 		return null; // Reached the root directory without finding a .git folder
 	}
 
-	return findNearestGitFolder(parentDir);
+	return findRepoRoot(parentDir);
 }

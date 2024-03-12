@@ -14,5 +14,9 @@ binding = "WORKERS_SDK_RAG_KV"
 id = "03690cb14727424d8e5605c6b3f159b7"
 
 [[durable_objects.bindings]]
-name = "WORKERS_SDK_RAG_MUTEX"
-class_name = "RagMutex"
+name = "WORKERS_SDK_CONSISTENT_KV"
+class_name = "ConsistentKVDO"
+
+[[migrations]]
+tag = "v1" # Should be unique for each entry
+new_classes = ["ConsistentKVDO"]

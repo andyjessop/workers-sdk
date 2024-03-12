@@ -1,13 +1,11 @@
-import { Ai } from "@cloudflare/ai";
-import { embeddingGenerator } from "../../ai/embedding-generator";
-import { textGenerator } from "../../ai/text-generator";
-import { retrieveSimilar } from "../../vectorize/retrieve-similar";
+import { generateText } from "../../ai/generate-text";
 import { createContext } from "./create-context";
 import { createPrompt } from "./create-prompt";
 import type { Context } from "../../types";
+import type { StatusCode } from "hono/utils/http-status";
 
-export async function query({ req, env, json }: Context) {
-	const body = (await req.json()) as { model: string; query: string };
+export async function query(ctx: Context) {
+	const body = (await ctx.req.json()) as { model: string; query: string };
 
 	if (!body?.query) {
 		return new Response("Missing query", { status: 400 });
@@ -15,24 +13,22 @@ export async function query({ req, env, json }: Context) {
 
 	const { query: q } = body;
 
-	const ai = new Ai(env.WORKERS_SDK_RAG_AI);
-	const generateEmbedding = embeddingGenerator(ai);
-	const generateText = textGenerator(ai);
+	const vectorDb = ctx.get("VectorDb");
+	const ai = ctx.get("Ai");
 
-	const vector = await generateEmbedding(q);
+	const { code, data, message, success } = await vectorDb.fetchSimilar(q);
 
-	if (!vector?.length) {
-		return new Response("Could not create embedding", { status: 500 });
+	if (!success) {
+		return ctx.json({ message }, code as StatusCode);
 	}
 
-	const matches = await retrieveSimilar(vector, env);
-	const context = createContext(matches);
+	const context = createContext(data);
 	const prompt = createPrompt(context, q);
 
 	try {
-		const response = await generateText(prompt);
+		const response = await generateText(ai, prompt);
 
-		return json(
+		return ctx.json(
 			{
 				prompt,
 				response,
@@ -40,6 +36,9 @@ export async function query({ req, env, json }: Context) {
 			200
 		);
 	} catch (e) {
-		return new Response(`Could not create completion: ${e}`, { status: 500 });
+		return ctx.json(
+			{ message: `Could not create completion: ${e}` },
+			{ status: 500 }
+		);
 	}
 }

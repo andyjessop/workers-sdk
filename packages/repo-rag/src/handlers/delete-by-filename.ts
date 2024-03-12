@@ -1,8 +1,8 @@
-import { deleteIndicesByFilename } from "../vectorize/delete-indices-by-filename";
 import type { Context } from "../types";
+import type { StatusCode } from "hono/utils/http-status";
 
-export async function deleteByFilename({ req, env, json }: Context) {
-	const body = (await req.json()) as { filename: string };
+export async function deleteByFilename(ctx: Context) {
+	const body = (await ctx.req.json()) as { filename: string };
 
 	if (!body?.filename) {
 		return new Response("Missing filename", { status: 400 });
@@ -10,12 +10,19 @@ export async function deleteByFilename({ req, env, json }: Context) {
 
 	const { filename } = body;
 
-	const deleted = await deleteIndicesByFilename(filename, env);
+	const { code, data, message, success } = await ctx
+		.get("VectorDb")
+		.deleteByFilename(filename);
 
-	return json(
+	if (!success) {
+		return ctx.json({ message }, code as StatusCode);
+	}
+
+	return ctx.json(
 		{
-			deleted,
+			data,
+			message,
 		},
-		200
+		code as StatusCode
 	);
 }

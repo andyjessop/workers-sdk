@@ -1,4 +1,6 @@
-export function createContext(matches: { score: number; content: string }[]) {
+export function createContext(
+	matches: { score: number; content: string }[] = []
+) {
 	return matches
 		.map(
 			(entry) => `
