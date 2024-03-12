@@ -13,6 +13,9 @@ const CURRENT_HASH_URL =
 const CREATE_VECTORS_URL =
 	"https://workers-sdk-rag.andrewdjessop.workers.dev/vectors";
 
+const DELETE_BY_FILENAME_URL =
+	"https://workers-sdk-rag.andrewdjessop.workers.dev/vectors/delete_by_filename";
+
 const isDryRun = process.argv.includes("--dry-run");
 
 const excludedfiles = ["pnpm-lock.yaml"];
@@ -39,19 +42,31 @@ async function main() {
 			data: string | null;
 		};
 
-		const changedFiles = getChangedFilesBetweenHashes(
+		const { addedOrModified, deleted } = getChangedFilesBetweenHashes(
 			repoPath,
 			lastHash.data,
 			currentHash
-		).filter((filename) => !excludedfiles.includes(filename));
+		);
 
-		console.log(changedFiles);
+		console.log(addedOrModified);
 
-		const splitArrays = await splitFilenamesBySize(changedFiles);
+		await fetch(DELETE_BY_FILENAME_URL, {
+			method: "POST",
+			headers: {
+				WORKERS_SDK_RAG_API_KEY: process.env.WORKERS_SDK_RAG_API_KEY as string,
+			},
+			body: JSON.stringify({ filenames: deleted }),
+		});
+
+		const { totalSize, splitArrays } = await splitFilenamesBySize(
+			addedOrModified
+		);
+
+		console.log(`Total file size: ${totalSize} bytes`);
 
 		for (const array of splitArrays) {
 			const modifiedArray = await Promise.all(
-				array.map(async (filename) => {
+				array.map(async ({ filename }) => {
 					const content = await fetchFileContent(filename);
 
 					if (!content) {

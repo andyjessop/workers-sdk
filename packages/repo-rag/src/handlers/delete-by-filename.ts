@@ -1,28 +1,38 @@
 import type { Context } from "../types";
-import type { StatusCode } from "hono/utils/http-status";
 
 export async function deleteByFilename(ctx: Context) {
-	const body = (await ctx.req.json()) as { filename: string };
+	const body = (await ctx.req.json()) as { filenames: string[] };
+	const isDryRun = ctx.get("isDryRun");
 
-	if (!body?.filename) {
-		return new Response("Missing filename", { status: 400 });
+	if (!body?.filenames) {
+		return new Response("Missing filenames array", { status: 400 });
 	}
 
-	const { filename } = body;
+	const { filenames } = body;
 
-	const { code, data, message, success } = await ctx
-		.get("VectorDb")
-		.deleteByFilename(filename);
+	const deletedFiles = [];
+	const failedFiles = [];
 
-	if (!success) {
-		return ctx.json({ message }, code as StatusCode);
+	for (const filename of filenames) {
+		const { success } = await ctx.get("VectorDb").deleteByFilename(filename);
+
+		if (success) {
+			deletedFiles.push(filename);
+		} else {
+			failedFiles.push(filename);
+		}
 	}
 
 	return ctx.json(
 		{
-			data,
-			message,
+			data: {
+				deletedFiles,
+				failedFiles,
+			},
+			message: isDryRun
+				? "[Dry run: no data modified] Delete successful."
+				: "Delete successful.",
 		},
-		code as StatusCode
+		200
 	);
 }
