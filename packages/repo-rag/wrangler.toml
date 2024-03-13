@@ -1,10 +1,11 @@
 name = "workers-sdk-rag"
 compatibility_date = "2022-05-03"
 main = "src/index.ts"
+compatibility_flags = [ "nodejs_compat" ]
 
 [[vectorize]]
 binding = "WORKERS_SDK_RAG_INDEX"
-index_name = "workers-sdk-rag"
+index_name = "workers-sdk-rag-1536"
 
 [ai]
 binding = "WORKERS_SDK_RAG_AI"

@@ -15,8 +15,11 @@ export async function query(ctx: Context) {
 
 	const vectorDb = ctx.get("VectorDb");
 	const ai = ctx.get("Ai");
+	const embeddings = ctx.get("Embeddings");
 
-	const { code, data, message, success } = await vectorDb.fetchSimilar(q);
+	const vector = await embeddings.generateVector(q);
+
+	const { code, data, message, success } = await vectorDb.fetchSimilar(vector);
 
 	if (!success) {
 		return ctx.json({ message }, code as StatusCode);
@@ -25,20 +28,13 @@ export async function query(ctx: Context) {
 	const context = createContext(data);
 	const prompt = createPrompt(context, q);
 
-	try {
-		const response = await generateText(ai, prompt);
+	const response = await ai.sendMessage(prompt);
 
-		return ctx.json(
-			{
-				prompt,
-				response: response.response,
-			},
-			200
-		);
-	} catch (e) {
-		return ctx.json(
-			{ message: `Could not create completion: ${e}` },
-			{ status: 500 }
-		);
-	}
+	return ctx.json(
+		{
+			prompt,
+			response: response.data,
+		},
+		200
+	);
 }

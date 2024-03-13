@@ -2,7 +2,7 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 
 const splitter = new RecursiveCharacterTextSplitter({
 	chunkOverlap: 200,
-	chunkSize: 2000,
+	chunkSize: 5000,
 });
 
 export async function splitFileIntoDocuments(

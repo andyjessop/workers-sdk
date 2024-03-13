@@ -10,7 +10,10 @@
 		"deploy": "wrangler deploy",
 		"test": "vitest run",
 		"test:ci": "vitest run",
-		"upsert": "node -r esbuild-register scripts/runner/index.ts",
+		"insert": "node -r esbuild-register scripts/runner/index.ts",
+		"insert:dry": "node -r esbuild-register scripts/runner/index.ts",
+		"upsert": "node -r esbuild-register scripts/runner/index.ts --overwrite",
+		"upsert:dry": "node -r esbuild-register scripts/runner/index.ts --dry-run",
 		"query": "node -r esbuild-register scripts/query/index.ts"
 	},
 	"devDependencies": {
@@ -23,7 +26,10 @@
 		"@cloudflare/ai": "^1.0.35",
 		"@inquirer/prompts": "^4.2.1",
 		"dotenv": "^16.0.0",
+		"events": "^3.3.0",
 		"hono": "^4.0.10",
-		"langchain": "^0.1.26"
+		"langchain": "^0.1.26",
+		"node-fetch": "^3.3.2",
+		"openai": "^4.28.4"
 	}
 }

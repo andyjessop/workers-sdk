@@ -15,10 +15,15 @@ const DELETE_BY_FILENAME_URL =
 	"http://localhost:8787/vectors/delete_by_filename";
 
 const isDryRun = process.argv.includes("--dry-run");
+const overwrite = process.argv.includes("--overwrite");
 
 main();
 
 async function main() {
+	if (isDryRun) {
+		console.log("Dry run: no data will be modified or saved.");
+	}
+
 	const repoPath = findRepoRoot();
 
 	if (!repoPath) {
@@ -56,7 +61,7 @@ async function main() {
 			addedOrModified
 		);
 
-		console.log(`Total file size: ${totalSize} bytes`);
+		console.log(`Total file size to send: ${totalSize} bytes`);
 
 		for (const array of splitArrays) {
 			const modifiedArray = await Promise.all(
@@ -70,13 +75,26 @@ async function main() {
 					return {
 						filename: path.relative(repoPath, path.resolve(repoPath, filename)),
 						content,
+						overwrite,
 					};
 				})
 			);
 
 			const withoutNullEntries = modifiedArray.filter(
 				(entry) => entry !== null
-			) as { content: string; filename: string }[];
+			) as { content: string; filename: string; overwrite: boolean }[];
+
+			const filenames = withoutNullEntries.map((entry) => entry.filename);
+
+			if (filenames.length) {
+				console.log(
+					`\x1b[36m ℹ Sending ${filenames.length} files for vectorizing:\x1b[0m`
+				);
+
+				for (const filename of filenames) {
+					console.log(`\x1b[36m ℹ ${filename}\x1b[0m`);
+				}
+			}
 
 			const vectorizeUrl = isDryRun
 				? `${CREATE_VECTORS_URL}?dry-run`

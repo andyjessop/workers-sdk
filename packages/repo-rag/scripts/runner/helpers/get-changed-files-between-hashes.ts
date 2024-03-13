@@ -19,6 +19,12 @@ export function getChangedFilesBetweenHashes(
 			"pnpm-lock.yaml",
 			".vscode",
 			"vendor",
+			"**/*.wasm",
+			"**/*.sqlite",
+			"**/*.png",
+			"**/*.jpg",
+			"**/*.ico",
+			"**/*.gif",
 		];
 
 		const gitCommand = `git ls-files -- . ':!${excludedPaths.join("' ':!")}'`;

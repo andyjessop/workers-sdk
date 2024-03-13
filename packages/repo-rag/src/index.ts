@@ -8,12 +8,17 @@ import { ai } from "./middleware/ai";
 import { auth } from "./middleware/auth";
 import { consistentKv } from "./middleware/consistent-kv";
 import { dryRun } from "./middleware/dry-run";
+import { embeddings } from "./middleware/embeddings";
+import { logger } from "./middleware/logger";
 import { vectorDb } from "./middleware/vector-db";
 import type { Env, Variables } from "./types";
 
 export { ConsistentKVDO } from "./storage/ConsistentKVDO";
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
+
+// Log to the console
+app.use(logger);
 
 // Checks for WORKERS_SDK_RAG_API_KEY
 app.use(auth);
@@ -22,6 +27,7 @@ app.use(auth);
 app.use(dryRun);
 app.use(ai);
 app.use(consistentKv);
+app.use(embeddings);
 app.use(vectorDb);
 
 app.get("/vectors", listVectors);

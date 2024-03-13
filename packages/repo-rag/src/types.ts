@@ -1,3 +1,6 @@
+import { AnthropicMessages } from "./ai/AnthropicMessages";
+import { Embeddings } from "./embeddings/Embeddings";
+import { Logger } from "./logger/Logger";
 import type { ConsistentKV } from "./storage/ConsistentKV";
 import type { VectorDb } from "./vectorize/VectorDb";
 import type { Ai } from "@cloudflare/ai";
@@ -8,6 +11,8 @@ import type {
 } from "hono";
 
 export type Env = {
+	ANTRHROPIC_API_KEY: string;
+	OPENAI_API_KEY: string;
 	REMOTE_API_URL: string;
 	WORKERS_SDK_RAG_AI: Ai;
 	WORKERS_SDK_RAG_KV: KVNamespace;
@@ -17,8 +22,10 @@ export type Env = {
 };
 
 export type Variables = {
-	Ai: Ai;
+	Ai: AnthropicMessages;
 	ConsistentKV: ConsistentKV;
+	Embeddings: Embeddings;
+	Logger: Logger;
 	isDryRun: boolean;
 	VectorDb: VectorDb;
 };

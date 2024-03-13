@@ -1,7 +1,5 @@
-import { EMBEDDINGS_MODEL } from "../constants";
-import { splitFileIntoDocuments } from "./split-file-into-documents";
-import type { ConsistentKV } from "../storage/ConsistentKV";
-import type { Ai } from "@cloudflare/ai";
+import { Embedding, Embeddings } from "../embeddings/Embeddings";
+import { Logger } from "../logger/Logger";
 
 interface VectorDbResponse {
 	code: number;
@@ -11,67 +9,34 @@ interface VectorDbResponse {
 }
 
 export class VectorDb {
-	#ai: Ai;
-	#consistentKV: ConsistentKV;
+	#embeddings: Embeddings;
 	#isDryRun = false;
+	#logger: Logger;
 	#vectorDb: VectorizeIndex;
 
 	constructor(
-		ai: Ai,
 		vectorDb: VectorizeIndex,
-		consistentKV: ConsistentKV,
+		embeddings: Embeddings,
+		logger: Logger,
 		isDryRun = false
 	) {
-		this.#consistentKV = consistentKV;
+		this.#embeddings = embeddings;
 		this.#isDryRun = isDryRun;
-		this.#ai = ai;
+		this.#logger = logger;
 		this.#vectorDb = vectorDb;
 	}
 
-	async upsert(content: string, filename: string): Promise<VectorDbResponse> {
-		const documents = await splitFileIntoDocuments(content, filename);
+	async exists(filename: string) {
+		const getId = await this.#embeddings.buildEmbeddingId(filename);
+		const id = getId();
 
-		if (!documents.length) {
-			return {
-				code: 400,
-				success: false,
-				message: "No content found",
-			};
-		}
+		return (await this.#vectorDb.getByIds([id])).length !== 0;
+	}
 
-		const timestamp = Date.now();
-		const embeddings = new Set<{
-			content: string;
-			id: string;
-			vector: number[];
-		}>();
-
-		for (const [i, document] of documents.entries()) {
-			try {
-				const vector = await this.#generateEmbedding(document.pageContent);
-
-				if (!vector?.length) {
-					return {
-						code: 500,
-						success: false,
-						message: "Could not create embeddings",
-					};
-				}
-
-				embeddings.add({
-					content: document.pageContent,
-					id: `${filename}-${i}`,
-					vector,
-				});
-			} catch (e) {
-				return {
-					code: 500,
-					success: false,
-					message: "Could not create embeddings",
-				};
-			}
-		}
-
+	async upsert(
+		filename: string,
+		embeddings: Embedding[]
+	): Promise<VectorDbResponse> {
 		if (!this.#isDryRun) {
 			await this.deleteByFilename(filename);
 
@@ -83,21 +48,21 @@ export class VectorDb {
 							values: embedding.vector,
 							metadata: {
 								filename,
-								timestamp,
 								content: embedding.content,
 							},
 						},
 					]);
+
+					this.#logger.success(
+						`Embedding ${embedding.id} inserted for filename: ${filename}`
+					);
 				} catch (e) {
-					console.log("Failed: ", embedding);
+					this.#logger.error(
+						`Failed to insert embedding: ${JSON.stringify(embedding)}`,
+						e
+					);
 				}
 			}
-
-			const embeddingsArray = [...embeddings];
-			await this.#consistentKV.put(
-				filename,
-				JSON.stringify(embeddingsArray.map((e) => e.id))
-			);
 		}
 
 		return {
@@ -111,23 +76,37 @@ export class VectorDb {
 	}
 
 	async deleteByFilename(filename: string): Promise<VectorDbResponse> {
-		const existingEntry = await this.#consistentKV.get(filename);
+		if (!this.#isDryRun) {
+			try {
+				const getId = await this.#embeddings.buildEmbeddingId(filename);
+				const idsToDelete = new Array(100).fill(0).map((_, i) => getId(i));
 
-		const existingIds: string[] =
-			JSON.parse(existingEntry?.data?.value ?? "[]") ?? [];
+				const { count } = await this.#vectorDb.deleteByIds(idsToDelete);
 
-		// only update state if it's not a dry run
-		if (existingIds.length && !this.#isDryRun) {
-			await this.#vectorDb.deleteByIds(existingIds);
-			await this.#consistentKV.delete(filename);
+				const message = `Deleted ${count} embeddings for filename: ${filename}`;
+
+				this.#logger.success(message);
+
+				return {
+					code: 200,
+					success: true,
+					message: message,
+					data: [filename],
+				};
+			} catch (e) {
+				return {
+					code: 500,
+					success: false,
+					message: `Error deleting embeddings for ${filename}`,
+					data: [filename],
+				};
+			}
 		}
 
 		return {
 			code: 200,
 			success: true,
-			message: this.#isDryRun
-				? "[Dry run: no data modified] Delete successful."
-				: "Delete successful",
+			message: "[Dry run: no data modified] Delete successful.",
 			data: [filename],
 		};
 	}
@@ -159,22 +138,8 @@ export class VectorDb {
 		}
 	}
 
-	async #generateEmbedding(content: string): Promise<number[]> {
-		if (this.#isDryRun) {
-			return [1, 2, 3, 4, 5];
-		}
-
-		const embedding = await this.#ai.run(EMBEDDINGS_MODEL, {
-			text: content,
-		});
-
-		return embedding?.data?.[0];
-	}
-
-	async fetchSimilar(query: string) {
+	async fetchSimilar(vector: number[]) {
 		try {
-			const vector = await this.#generateEmbedding(query);
-
 			const similar = await this.#vectorDb.query(vector, {
 				topK: 20,
 				returnMetadata: true,
