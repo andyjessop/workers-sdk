@@ -3,17 +3,14 @@ compatibility_date = "2022-05-03"
 main = "src/index.ts"
 compatibility_flags = [ "nodejs_compat" ]
 
+[[kv_namespaces]]
+binding = "WORKERS_SDK_RAG_KV"
+id = "2d1e219bb06343c291b73e7758235325"
+preview_id = "3c6b2984c1f34afeb1850f32b05ce322"
+
 [[vectorize]]
 binding = "WORKERS_SDK_RAG_INDEX"
 index_name = "workers-sdk-rag-1536"
 
 [ai]
 binding = "WORKERS_SDK_RAG_AI"
-
-[[durable_objects.bindings]]
-name = "WORKERS_SDK_CONSISTENT_KV"
-class_name = "ConsistentKVDO"
-
-[[migrations]]
-tag = "v1" # Should be unique for each entry
-new_classes = ["ConsistentKVDO"]

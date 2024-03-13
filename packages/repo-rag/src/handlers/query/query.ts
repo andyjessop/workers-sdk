@@ -16,24 +16,52 @@ export async function query(ctx: Context) {
 	const vectorDb = ctx.get("VectorDb");
 	const ai = ctx.get("Ai");
 	const embeddings = ctx.get("Embeddings");
+	const logger = ctx.get("Logger");
+
+	logger.info("Generating vector for prompt.");
 
 	const vector = await embeddings.generateVector(q);
 
-	const { code, data, message, success } = await vectorDb.fetchSimilar(vector);
+	logger.success("Vector generated successfully.");
+	logger.info("Fetching similar vectors.");
+
+	const { code, data, message, success } = await vectorDb.fetchSimilar(
+		vector,
+		20
+	);
 
 	if (!success) {
+		logger.error(`Failed fetching similar vectors.`, { code, data, message });
+
 		return ctx.json({ message }, code as StatusCode);
 	}
+
+	logger.success(`${data.length} Similar vectors fetched successfully.`);
 
 	const context = createContext(data);
 	const prompt = createPrompt(context, q);
 
+	logger.info(`Prompt character length: ${prompt.length}`);
+	logger.info("Fetching AI response");
+
 	const response = await ai.sendMessage(prompt);
+
+	if (!response.success) {
+		logger.error(`Failed to fetch AI response:`, response.message);
+
+		return ctx.json(
+			{
+				data: response.data,
+			},
+			response.code as StatusCode
+		);
+	}
+
+	logger.success(`AI response fetched successfully.`, response);
 
 	return ctx.json(
 		{
-			prompt,
-			response: response.data,
+			data: response.data,
 		},
 		200
 	);

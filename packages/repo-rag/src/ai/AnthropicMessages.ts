@@ -76,8 +76,6 @@ export class AnthropicMessages extends EventEmitter {
 				model: this.#model,
 				messages: [...this.#messages],
 				max_tokens: this.#max_tokens,
-				stream: false,
-				system: this.#systemPrompt,
 			};
 
 			const requestOptions = {
@@ -90,10 +88,14 @@ export class AnthropicMessages extends EventEmitter {
 				body: JSON.stringify(requestBody),
 			};
 
+			this.#logger.info(`Sending request to Anthropic`, requestOptions);
+
 			const response = await fetch(
 				"https://api.anthropic.com/v1/messages",
 				requestOptions
 			);
+
+			this.#logger.info("Response from Anthropic: ", response.status);
 
 			const data = (await response.json()) as CreateMessageResponse;
 			const content = data.content[0].text;
@@ -110,12 +112,14 @@ export class AnthropicMessages extends EventEmitter {
 				success: true,
 			};
 		} catch (error) {
-			this.#logger.error(JSON.stringify(error));
+			const errorString = JSON.stringify(error);
+
+			this.#logger.error(errorString);
 
 			return {
 				code: 500,
-				data: null,
-				message: "An error occurred while processing the request.",
+				data: errorString,
+				message: "An error occurred while processing the request",
 				success: false,
 			};
 		}

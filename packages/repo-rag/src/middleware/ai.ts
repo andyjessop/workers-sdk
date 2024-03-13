@@ -7,7 +7,7 @@ import type { Context, Next } from "../types";
  */
 export async function ai(ctx: Context, next: Next) {
 	const logger = ctx.get("Logger");
-	const ai = new AnthropicMessages(ctx.env.ANTRHROPIC_API_KEY, logger, {
+	const ai = new AnthropicMessages(ctx.env.ANTHROPIC_API_KEY, logger, {
 		model: "claude-3-opus-20240229",
 	});
 

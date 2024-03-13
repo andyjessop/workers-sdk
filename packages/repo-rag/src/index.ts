@@ -1,19 +1,18 @@
 import { Hono } from "hono";
-import { currentHash } from "./handlers/current-hash";
 import { deleteByFilename } from "./handlers/delete-by-filename";
-import { listVectors } from "./handlers/list-vectors";
 import { query } from "./handlers/query/query";
+import { deleteRepoDetails } from "./handlers/repo-details/delete";
+import { getRepoDetails } from "./handlers/repo-details/get";
+import { updateRepoDetails } from "./handlers/repo-details/update";
 import { vectorizeFiles } from "./handlers/vectorize-files/vectorize-files";
 import { ai } from "./middleware/ai";
 import { auth } from "./middleware/auth";
-import { consistentKv } from "./middleware/consistent-kv";
 import { dryRun } from "./middleware/dry-run";
 import { embeddings } from "./middleware/embeddings";
+import { kv } from "./middleware/kv";
 import { logger } from "./middleware/logger";
 import { vectorDb } from "./middleware/vector-db";
 import type { Env, Variables } from "./types";
-
-export { ConsistentKVDO } from "./storage/ConsistentKVDO";
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -24,13 +23,11 @@ app.use(logger);
 app.use(auth);
 
 // Add some values and services to the ctx object
+app.use(kv);
 app.use(dryRun);
 app.use(ai);
-app.use(consistentKv);
 app.use(embeddings);
 app.use(vectorDb);
-
-app.get("/vectors", listVectors);
 
 // Takes a file and turns it into vectors, saving the vectors in the index
 // This will split the file up into multiple chunks if deemed too big
@@ -45,8 +42,10 @@ app.post("/vectors/delete_by_filename", deleteByFilename);
 // snippets from the index, and use those as context for the query.
 app.post("/vectors/query", query);
 
-// The current hash is the commit hash of the last files to be saved to
-// the vector DB.
-app.get("/current_hash", currentHash);
+// CRUD for the current hash. This is updated manually by the client when
+// it has finished uploading the current diff
+app.get("/repo_details", getRepoDetails);
+app.put("/repo_details", updateRepoDetails);
+app.delete("/repo_details", deleteRepoDetails);
 
 export default app;

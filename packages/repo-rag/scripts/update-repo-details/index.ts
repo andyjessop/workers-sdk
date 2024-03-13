@@ -3,12 +3,12 @@ import { config } from "dotenv";
 
 config();
 
-const QUERY_URL = "http://localhost:8787/vectors/query";
+const QUERY_URL = "http://localhost:8787/repo_details";
 
 main();
 
 async function main() {
-	const prompt = await input({ message: "Enter your prompt" });
+	const hash = await input({ message: "Enter the new sha: " });
 
 	const response = await fetch(QUERY_URL, {
 		method: "POST",
@@ -16,7 +16,9 @@ async function main() {
 			WORKERS_SDK_RAG_API_KEY: process.env.WORKERS_SDK_RAG_API_KEY as string,
 		},
 		body: JSON.stringify({
-			query: prompt,
+			name: "workers-sdk",
+			owner: "andyjessop",
+			hash,
 		}),
 	});
 

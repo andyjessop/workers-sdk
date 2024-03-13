@@ -111,37 +111,10 @@ export class VectorDb {
 		};
 	}
 
-	async getById(id: string): Promise<VectorDbResponse> {
-		try {
-			const vectors = await this.#vectorDb.getByIds([id]);
-
-			if (!vectors) {
-				return {
-					code: 404,
-					success: false,
-					message: `Vector with ID ${id} not found`,
-				};
-			}
-
-			return {
-				code: 200,
-				success: true,
-				message: "Vector retrieved successfully",
-				data: vectors.map((vector) => JSON.stringify(vector)),
-			};
-		} catch (e) {
-			return {
-				code: 500,
-				success: false,
-				message: `Error retrieving vector with ID ${id}: ${e}`,
-			};
-		}
-	}
-
-	async fetchSimilar(vector: number[]) {
+	async fetchSimilar(vector: number[], topK = 20) {
 		try {
 			const similar = await this.#vectorDb.query(vector, {
-				topK: 20,
+				topK,
 				returnMetadata: true,
 			});
 
@@ -160,6 +133,7 @@ export class VectorDb {
 		} catch (e) {
 			return {
 				code: 500,
+				data: [],
 				message: e,
 				success: false,
 			};
