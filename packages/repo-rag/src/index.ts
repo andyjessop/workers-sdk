@@ -1,9 +1,11 @@
 import { Hono } from "hono";
 import { deleteByFilename } from "./handlers/delete-by-filename";
 import { query } from "./handlers/query/query";
-import { deleteRepoDetails } from "./handlers/repo-details/delete";
-import { getRepoDetails } from "./handlers/repo-details/get";
-import { updateRepoDetails } from "./handlers/repo-details/update";
+import { deleteRepo } from "./handlers/repo/delete";
+import { getRepo } from "./handlers/repo/get";
+import { updateRepo } from "./handlers/repo/update";
+import { githubWebhookHandler } from "./handlers/repo/webhooks/github/handler";
+import { githubWebhookVerificationMiddleware } from "./handlers/repo/webhooks/github/verification-middleware";
 import { vectorizeFiles } from "./handlers/vectorize-files/vectorize-files";
 import { ai } from "./middleware/ai";
 import { auth } from "./middleware/auth";
@@ -11,6 +13,7 @@ import { dryRun } from "./middleware/dry-run";
 import { embeddings } from "./middleware/embeddings";
 import { kv } from "./middleware/kv";
 import { logger } from "./middleware/logger";
+import { repo } from "./middleware/repo";
 import { vectorDb } from "./middleware/vector-db";
 import type { Env, Variables } from "./types";
 
@@ -42,10 +45,14 @@ app.post("/vectors/delete_by_filename", deleteByFilename);
 // snippets from the index, and use those as context for the query.
 app.post("/vectors/query", query);
 
-// CRUD for the current hash. This is updated manually by the client when
-// it has finished uploading the current diff
-app.get("/repo_details", getRepoDetails);
-app.put("/repo_details", updateRepoDetails);
-app.delete("/repo_details", deleteRepoDetails);
+app.get("/repo/:owner/:name", repo, getRepo);
+app.put("/repo/:owner/:name", repo, updateRepo);
+app.delete("/repo/:owner/:name", repo, deleteRepo);
+app.post(
+	"/repo/:owner/:name/webhooks/github",
+	githubWebhookVerificationMiddleware,
+	repo,
+	githubWebhookHandler
+);
 
 export default app;

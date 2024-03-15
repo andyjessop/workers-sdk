@@ -1,6 +1,6 @@
 import type { Context } from "../../types";
 
-export async function getRepoDetails(ctx: Context) {
+export async function getRepo(ctx: Context) {
 	const kv = ctx.get("KV");
 	const logger = ctx.get("Logger");
 

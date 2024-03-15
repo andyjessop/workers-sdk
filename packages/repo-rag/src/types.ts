@@ -1,6 +1,7 @@
 import { AnthropicMessages } from "./ai/AnthropicMessages";
 import { Embeddings } from "./embeddings/Embeddings";
 import { Logger } from "./logger/Logger";
+import { Repo } from "./repo/Repo";
 import type { VectorDb } from "./vectorize/VectorDb";
 import type { Ai } from "@cloudflare/ai";
 import type {
@@ -12,6 +13,7 @@ import type {
 export type Env = {
 	ANTHROPIC_API_KEY: string;
 	GITHUB_API_KEY: string;
+	GITHUB_WEBHOOK_SECRET: string;
 	OPENAI_API_KEY: string;
 	REMOTE_API_URL: string;
 	WORKERS_SDK_RAG_AI: Ai;
@@ -26,6 +28,7 @@ export type Variables = {
 	Logger: Logger;
 	KV: KVNamespace;
 	isDryRun: boolean;
+	Repo: Repo;
 	VectorDb: VectorDb;
 };
 

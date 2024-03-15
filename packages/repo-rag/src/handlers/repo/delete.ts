@@ -1,6 +1,6 @@
 import type { Context } from "../../types";
 
-export async function deleteRepoDetails(ctx: Context) {
+export async function deleteRepo(ctx: Context) {
 	const kv = ctx.get("KV");
 	const logger = ctx.get("Logger");
 
